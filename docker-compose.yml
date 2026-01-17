@@ -1,22 +1,25 @@
 version: '3.8'
-
 services:
   app:
-    build: .
+    build:
+      context: .
+      target: development
     ports:
       - "3000:3000"
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
     environment:
-      - NODE_ENV=production
-      - DB_HOST=mysql
+      - NODE_ENV=development
+      - DB_HOST=db
       - DB_USER=user
       - DB_PASSWORD=password
       - DB_NAME=mydb
     depends_on:
-      - mysql
-    networks:
-      - app-network
+      - db
+    command: npm run dev
 
-  mysql:
+  db:
     image: mysql:8.0
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
@@ -27,12 +30,10 @@ services:
       - "3306:3306"
     volumes:
       - mysql-data:/var/lib/mysql
-    networks:
-      - app-network
-
-networks:
-  app-network:
-    driver: bridge
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 5s
+      retries: 10
 
 volumes:
   mysql-data:
