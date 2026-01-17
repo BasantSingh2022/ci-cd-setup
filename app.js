@@ -25,23 +25,27 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Something went wrong!' });
 });
 
-// Sync database and start server
-const PORT = process.env.PORT || 3000;
-const startServer = async () => {
-  try {
-    await sequelize.authenticate();
-    console.log('Database connected');
-    await sequelize.sync({ alter: process.env.NODE_ENV === 'development' });
-    
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
-  } catch (error) {
-    console.error('Unable to start server:', error);
-    process.exit(1);
-  }
-};
-
-startServer();
-
+// Export the app before starting the server
 module.exports = app;
+
+// Only start the server if this file is run directly
+if (require.main === module) {
+  // Sync database and start server
+  const PORT = process.env.PORT || 3000;
+  const startServer = async () => {
+    try {
+      await sequelize.authenticate();
+      console.log('Database connected');
+      await sequelize.sync({ alter: process.env.NODE_ENV === 'development' });
+      
+      app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+      });
+    } catch (error) {
+      console.error('Unable to start server:', error);
+      process.exit(1);
+    }
+  };
+
+  startServer();
+}
