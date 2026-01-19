@@ -59,6 +59,7 @@ jobs:
 
       - name: Run containers (CI test only)
         run: |
+          tags: ${{ secrets.DOCKER_USERNAME }}/nodejs-mysql-app:latest
           docker compose up -d
           sleep 20
           docker compose ps
