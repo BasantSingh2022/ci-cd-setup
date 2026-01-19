@@ -2,9 +2,9 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, develop ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, develop ]
 
 jobs:
   build:
@@ -48,27 +48,74 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
-    - name: Deploy to server
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host: ${{ secrets.SERVER_HOST }}
-        username: ${{ secrets.SERVER_USERNAME }}
-        key: ${{ secrets.SERVER_SSH_KEY }}
-        port: ${{ secrets.SERVER_PORT || 22 }}
-        script: |
-          cd /path/to/your/app
-          
-          # Pull latest changes if needed (optional)
-          git pull origin main || true
-          
-          # Copy environment file if not already present
-          # cp .env.production .env || true
-          
-          # Stop existing containers
-          docker-compose down || true
-          
-          # Pull latest images
-          docker-compose pull
-          
-          # Start services
-          docker-compose up -d
+    # Option 1: Deploy to remote server via SSH (current setup)
+    # - name: Deploy to remote server
+    #   uses: appleboy/ssh-action@v1.0.3
+    #   with:
+    #     host: ${{ secrets.SERVER_HOST }}
+    #     username: ${{ secrets.SERVER_USERNAME }}
+    #     key: ${{ secrets.SERVER_SSH_KEY }}
+    #     port: ${{ secrets.SERVER_PORT || 22 }}
+    #     script: |
+    #       cd /path/to/your/app
+    #
+    #       # Pull latest changes if needed (optional)
+    #       git pull origin main || true
+    #
+    #       # Copy environment file if not already present
+    #       # cp .env.production .env || true
+    #
+    #       # Stop existing containers
+    #       docker-compose down || true
+    #
+    #       # Pull latest images
+    #       docker-compose pull
+    #
+    #       # Start services
+    #       docker-compose up -d
+
+    # Option 2: Local deployment on GitHub Actions runner
+    - name: Deploy locally on GitHub Actions
+      run: |
+        echo "Starting local deployment on GitHub Actions runner..."
+
+        # Pull the latest Docker image
+        docker pull ${{ secrets.DOCKER_USERNAME }}/nodejs-mysql-app:latest
+
+        # Stop and remove any existing container
+        docker stop nodejs-app || true
+        docker rm nodejs-app || true
+
+        # Create .env file for local deployment (if needed)
+        echo "NODE_ENV=production" > .env
+        echo "PORT=3000" >> .env
+        echo "DB_HOST=localhost" >> .env
+        echo "DB_USER=root" >> .env
+        echo "DB_PASSWORD=password" >> .env
+        echo "DB_NAME=ci_cd_pipeline" >> .env
+        echo "DB_PORT=3306" >> .env
+
+        # For local deployment, you might need a local database
+        # Option A: Use a local MySQL container
+        docker run -d --name mysql-db \
+          -e MYSQL_ROOT_PASSWORD=password \
+          -e MYSQL_DATABASE=ci_cd_pipeline \
+          -e MYSQL_USER=root \
+          -e MYSQL_PASSWORD=password \
+          -p 3306:3306 \
+          mysql:8.0
+
+        # Wait for database to be ready
+        echo "Waiting for database to be ready..."
+        sleep 30
+
+        # Run the application container
+        docker run -d --name nodejs-app \
+          --link mysql-db:db \
+          -p 3000:3000 \
+          --env-file .env \
+          ${{ secrets.DOCKER_USERNAME }}/nodejs-mysql-app:latest
+
+        echo "Local deployment completed!"
+        echo "Application should be running on port 3000"
+        echo "Database is running on port 3306"

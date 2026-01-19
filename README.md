@@ -32,9 +32,5 @@ The project includes multiple GitHub Actions workflows for different deployment 
 - **Build**: Install deps, lint, build Docker image
 - **Deploy**: Auto-deploy to configured server via SSH
 
-### 2. Manual Server Deployment (`deploy.yml`)
-- **Triggers**: Manual trigger via GitHub Actions
-- **Features**: Deploy to any server with SSH access
-- **Environments**: staging, production, custom
-- **Use case**: Deploy to VPS, dedicated servers, or any SSH-accessible machine
+
 
