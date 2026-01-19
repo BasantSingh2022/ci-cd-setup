@@ -1,0 +1,98 @@
+name: Deploy to Server
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+        - staging
+        - production
+        - custom
+      server_host:
+        description: 'Server host/IP (leave empty to use secrets)'
+        required: false
+        type: string
+      server_user:
+        description: 'Server username (leave empty to use secrets)'
+        required: false
+        type: string
+      deploy_path:
+        description: 'Deployment path on server'
+        required: false
+        default: '/opt/myapp'
+        type: string
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set deployment variables
+      id: vars
+      run: |
+        echo "environment=${{ inputs.environment }}" >> $GITHUB_OUTPUT
+        echo "server_host=${{ inputs.server_host || secrets.SERVER_HOST }}" >> $GITHUB_OUTPUT
+        echo "server_user=${{ inputs.server_user || secrets.SERVER_USERNAME }}" >> $GITHUB_OUTPUT
+        echo "deploy_path=${{ inputs.deploy_path }}" >> $GITHUB_OUTPUT
+
+    - name: Deploy to ${{ inputs.environment }} server
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ steps.vars.outputs.server_host }}
+        username: ${{ steps.vars.outputs.server_user }}
+        key: ${{ secrets.SERVER_SSH_KEY }}
+        port: ${{ secrets.SERVER_PORT || 22 }}
+        script: |
+          echo "Deploying to ${{ inputs.environment }} environment"
+          echo "Server: ${{ steps.vars.outputs.server_host }}"
+          echo "Path: ${{ steps.vars.outputs.deploy_path }}"
+
+          # Create deployment directory if it doesn't exist
+          sudo mkdir -p ${{ steps.vars.outputs.deploy_path }}
+          sudo chown ${{ steps.vars.outputs.server_user }}:${{ steps.vars.outputs.server_user }} ${{ steps.vars.outputs.deploy_path }}
+
+          cd ${{ steps.vars.outputs.deploy_path }}
+
+          # Backup current deployment
+          if [ -d "current" ]; then
+            mv current backup-$(date +%Y%m%d_%H%M%S) || true
+          fi
+
+          # Clone or update repository
+          if [ ! -d "repo" ]; then
+            git clone https://github.com/${{ github.repository }}.git repo
+          else
+            cd repo
+            git fetch origin
+            git reset --hard origin/main
+            cd ..
+          fi
+
+          # Copy files to current deployment
+          cp -r repo current
+
+          cd current
+
+          # Install dependencies if needed
+          if [ -f "package.json" ]; then
+            npm ci --production
+          fi
+
+          # Stop existing containers/services
+          docker-compose down || true
+          docker stop $(docker ps -q --filter ancestor=${{ secrets.DOCKER_USERNAME }}/nodejs-mysql-app) || true
+
+          # Pull latest Docker image
+          docker pull ${{ secrets.DOCKER_USERNAME }}/nodejs-mysql-app:latest
+
+          # Start services
+          docker-compose up -d
+
+          echo "Deployment to ${{ inputs.environment }} completed successfully"
