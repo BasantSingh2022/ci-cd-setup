@@ -1,15 +1,17 @@
 // jest.config.js
 module.exports = {
   testEnvironment: 'node',
-  testMatch: ['**/src/__tests__/**/*.test.js'],
+  testMatch: ['**/__tests__/**/*.test.js'],
   testPathIgnorePatterns: ['/node_modules/'],
   collectCoverage: true,
   coverageDirectory: 'coverage',
   collectCoverageFrom: [
-    'src/**/*.js',
-    '!src/**/*.test.js',
-    '!src/app.js',
-    '!src/config/database.js'
+    '*.js',
+    'routes/**/*.js',
+    'config/**/*.js',
+    '!*.test.js',
+    '!routes/**/*.test.js',
+    '!config/**/*.test.js'
   ],
   setupFilesAfterEnv: ['./jest.setup.js']
 };

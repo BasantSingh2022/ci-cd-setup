@@ -48,4 +48,6 @@ if (require.main === module) {
   };
 
   startServer();
+
+  // test export for CI/CD purposes
 }
