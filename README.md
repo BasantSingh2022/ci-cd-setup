@@ -29,7 +29,7 @@ The project includes multiple GitHub Actions workflows for different deployment 
 
 ### 1. Main CI/CD Pipeline (`ci.yml`)
 - **Triggers**: Push/PR to main branch
-- **Build**: Install deps, lint, test, build Docker image
+- **Build**: Install deps, lint, build Docker image
 - **Deploy**: Auto-deploy to configured server via SSH
 
 ### 2. Manual Server Deployment (`deploy.yml`)
