@@ -32,5 +32,38 @@ The project includes multiple GitHub Actions workflows for different deployment 
 - **Build**: Install deps, lint, build Docker image
 - **Deploy**: Auto-deploy to configured server via SSH
 
+ #deploy:
+    #runs-on: ubuntu-latest
+    #needs: build
+    #if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    #steps:
+    # Option 1: Deploy to remote server via SSH (current setup)
+    # - name: Deploy to remote server
+    #   uses: appleboy/ssh-action@v1.0.3
+    #   with:
+    #     host: ${{ secrets.SERVER_HOST }}
+    #     username: ${{ secrets.SERVER_USERNAME }}
+    #     key: ${{ secrets.SERVER_SSH_KEY }}
+    #     port: ${{ secrets.SERVER_PORT || 22 }}
+    #     script: |
+    #       cd /path/to/your/app
+    #
+    #       # Pull latest changes if needed (optional)
+    #       git pull origin main || true
+    #
+    #       # Copy environment file if not already present
+    #       # cp .env.production .env || true
+    #
+    #       # Stop existing containers
+    #       docker-compose down || true
+    #
+    #       # Pull latest images
+    #       docker-compose pull
+    #
+    #       # Start services
+    #       docker-compose up -d
+
+
 
 
