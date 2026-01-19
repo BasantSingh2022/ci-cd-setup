@@ -1,20 +1,30 @@
-version: '3.8'
+version: "3.8"
+
 services:
+  db:
+    image: mysql:8.0
+    container_name: mysql-db
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: ci_cd_pipeline
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      retries: 5
+
   app:
-    build:
-      context: .
+    image: ${DOCKER_USERNAME}/nodejs-mysql-app:latest
+    container_name: nodejs-app
     ports:
       - "3000:3000"
-    volumes:
-      - .:/usr/src/app
-      - /usr/src/app/node_modules
+    depends_on:
+      db:
+        condition: service_healthy
     environment:
-      - NODE_ENV=${NODE_ENV}
-      - DB_HOST=${DB_HOST}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${DB_NAME}
-    command: npm run dev
-
-volumes:
-  mysql-data:
+      DB_HOST: db
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: ci_cd_pipeline
+      DB_PORT: 3306
