@@ -59,6 +59,7 @@ jobs:
 
       - name: Run containers (CI test only)
         run: |
+          export DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
           docker compose up -d
           sleep 20
           docker compose ps
