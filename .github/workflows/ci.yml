@@ -14,10 +14,10 @@ jobs:
       mysql:
         image: mysql:8.0
         env:
-          MYSQL_ROOT_PASSWORD: rootpassword
-          MYSQL_DATABASE: mydb
-          MYSQL_USER: user
-          MYSQL_PASSWORD: password
+          MYSQL_ROOT_PASSWORD: testrootpassword
+          MYSQL_DATABASE: testdb
+          MYSQL_USER: testuser
+          MYSQL_PASSWORD: testpassword
         ports:
           - 3306:3306
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
@@ -41,9 +41,9 @@ jobs:
       run: npm test
       env:
         DB_HOST: 127.0.0.1
-        DB_USER: user
-        DB_PASSWORD: password
-        DB_NAME: mydb
+        DB_USER: testuser
+        DB_PASSWORD: testpassword
+        DB_NAME: testdb
         NODE_ENV: test
 
   build:
