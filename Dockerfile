@@ -1,17 +1,26 @@
-# Development stage
-FROM node:18-alpine AS development
-WORKDIR /usr/src/app
-COPY package*.json ./
-RUN npm install
-COPY . .
-EXPOSE 3000
-CMD ["npm", "run", "dev"]
+# # Development stage
+# FROM node:18-alpine AS development
+# WORKDIR /usr/src/app
+# COPY package*.json ./
+# RUN npm install
+# COPY . .
+# EXPOSE 3000
+# CMD ["npm", "run", "dev"]
 
-# Production stage
-FROM node:18-alpine AS production
-WORKDIR /usr/src/app
+# # Production stage
+# FROM node:18-alpine AS production
+# WORKDIR /usr/src/app
+# COPY package*.json ./
+# RUN npm ci --only=production
+# COPY . .
+# EXPOSE 3000
+# CMD ["node", "app.js"]
+
+
+FROM node:18
+WORKDIR /app
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm ci
 COPY . .
 EXPOSE 3000
-CMD ["node", "app.js"]
+CMD ["npm","start", "node", "app.js"]
