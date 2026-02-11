@@ -57,9 +57,54 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Run containers (CI test only)
+      - name: Clean up existing containers
+        run: |
+          echo "Cleaning up existing containers..."
+          docker compose down --remove-orphans || true
+          docker system prune -f || true
+          docker volume prune -f || true
+
+      - name: Run containers with health checks
         run: |
           export DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
           docker compose up -d
-          sleep 20
+          
+          # Wait for containers to be healthy
+          echo "Waiting for containers to be healthy..."
+          timeout 60 bash -c 'until docker compose ps | grep -q "healthy\|running"; do sleep 5; done'
+          
+          # Check container status
+          docker compose ps
+          
+          # Log container status for debugging
+          docker compose logs --tail=50
+
+      - name: Verify application health
+        run: |
+          # Check if app container is running
+          if ! docker compose ps app | grep -q "Up"; then
+            echo "App container is not running!"
+            docker compose logs app
+            exit 1
+          fi
+          
+          # Check if database is healthy
+          if ! docker compose ps db | grep -q "healthy"; then
+            echo "Database is not healthy!"
+            docker compose logs db
+            exit 1
+          fi
+
+      - name: Cleanup on failure
+        if: failure()
+        run: |
+          echo "Build failed, cleaning up containers..."
+          docker compose down --remove-orphans || true
+          docker system prune -f || true
+          
+          # Try to restart containers once more
+          echo "Attempting to restart containers..."
+          export DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
+          docker compose up -d
+          sleep 10
           docker compose ps
